@@ -1011,6 +1011,7 @@ class ZigbeeClassifier {
         label: 'Voltage',
         type: 'number',
         unit: 'volt',
+        multipleOf: 0.1,
         readOnly: true,
       },
       PROFILE_ID.ZHA,                 // profileId
@@ -1331,28 +1332,29 @@ class ZigbeeClassifier {
     };
 
     maxHeatTargetProperty.updated = function() {
-      heatTargetProperty.setMaximum(this.value);
+      heatTargetProperty.updateMaximum();
     };
 
     heatTargetProperty.updated = function() {
       maxHeatTargetProperty.setMinimum(this.value);
       minHeatTargetProperty.setMaximum(this.value);
+      coolTargetProperty.updateMinimum();
     };
 
-    heatTargetProperty.updateMinimum = function() {
-      if (!minHeatTargetProperty.hasOwnProperty('value') ||
+    heatTargetProperty.updateMaximum = function() {
+      if (!maxHeatTargetProperty.hasOwnProperty('value') ||
           !deadbandProperty.hasOwnProperty('value') ||
           !coolTargetProperty.hasOwnProperty('value')) {
         // We don't have enough information yet
         return;
       }
-      const min1 = minHeatTargetProperty.value;
-      const min2 = coolTargetProperty.value + deadbandProperty.value;
-      heatTargetProperty.setMinimum(Math.max(min1, min2));
+      const max1 = maxHeatTargetProperty.value;
+      const max2 = coolTargetProperty.value - deadbandProperty.value;
+      heatTargetProperty.setMaximum(Math.min(max1, max2));
     };
 
     minHeatTargetProperty.updated = function() {
-      heatTargetProperty.updateMinimum();
+      heatTargetProperty.setMinimum(this.value);
     };
 
     absMinHeatTargetProperty.updated = function() {
@@ -1364,28 +1366,29 @@ class ZigbeeClassifier {
     };
 
     maxCoolTargetProperty.updated = function() {
-      coolTargetProperty.updateMaximum();
+      coolTargetProperty.setMaximum(this.value);
     };
 
     coolTargetProperty.updated = function() {
       maxCoolTargetProperty.setMinimum(this.value);
       minCoolTargetProperty.setMaximum(this.value);
+      heatTargetProperty.updateMaximum();
     };
 
-    coolTargetProperty.updateMaximum = function() {
-      if (!maxCoolTargetProperty.hasOwnProperty('value') ||
+    coolTargetProperty.updateMinimum = function() {
+      if (!minCoolTargetProperty.hasOwnProperty('value') ||
           !deadbandProperty.hasOwnProperty('value') ||
           !heatTargetProperty.hasOwnProperty('value')) {
         // We don't have enough information yet
         return;
       }
-      const max1 = maxCoolTargetProperty.value;
-      const max2 = heatTargetProperty.value - deadbandProperty.value;
-      coolTargetProperty.setMaximum(Math.max(max1, max2));
+      const min1 = minCoolTargetProperty.value;
+      const min2 = heatTargetProperty.value + deadbandProperty.value;
+      coolTargetProperty.setMinimum(Math.max(min1, min2));
     };
 
     minCoolTargetProperty.updated = function() {
-      coolTargetProperty.setMinimum(this.value);
+      coolTargetProperty.updateMinimum();
     };
 
     absMinCoolTargetProperty.updated = function() {
@@ -1393,15 +1396,23 @@ class ZigbeeClassifier {
     };
 
     deadbandProperty.updated = function() {
-      heatTargetProperty.updateMinimum();
-      coolTargetProperty.updateMaximum();
+      heatTargetProperty.updateMaximum();
+      coolTargetProperty.updateMinimum();
     };
 
     // It's possible that values have been persisted, but the mins/maxs
     // haven't been, so we call the update methods here to cover off that
     // case.
-    heatTargetProperty.updateMinimum();
-    coolTargetProperty.updateMaximum();
+    heatTargetProperty.updateMaximum();
+    coolTargetProperty.updateMinimum();
+
+    if (minHeatTargetProperty.hasOwnProperty('value')) {
+      heatTargetProperty.setMinimum(minHeatTargetProperty.value);
+    }
+
+    if (maxCoolTargetProperty.hasOwnProperty('value')) {
+      coolTargetProperty.setMaximum(maxCoolTargetProperty.value);
+    }
 
     this.addProperty(
       node,                             // device
@@ -1641,6 +1652,19 @@ class ZigbeeClassifier {
     const haElectricalEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.HAELECTRICAL_HEX);
 
+    let isZhaLight = false;
+    if (seMeteringEndpoint && !isZhaLight) {
+      isZhaLight = ZHA_DEVICE_ID.isLight(
+        node.activeEndpoints[seMeteringEndpoint].deviceId
+      );
+    }
+
+    if (haElectricalEndpoint && !isZhaLight) {
+      isZhaLight = ZHA_DEVICE_ID.isLight(
+        node.activeEndpoints[haElectricalEndpoint].deviceId
+      );
+    }
+
     const genBinaryInputEndpoint =
       node.findZhaEndpointWithInputClusterIdHex(CLUSTER_ID.GENBINARYINPUT_HEX);
     const genLevelCtrlEndpoint =
@@ -1707,11 +1731,13 @@ class ZigbeeClassifier {
       this.initOccupancySensor(node, msOccupancySensingEndpoint);
     } else if (haElectricalEndpoint &&
                !lightLinkEndpoint &&
-               !node.lightingColorCtrlEndpoint) {
+               !node.lightingColorCtrlEndpoint &&
+               !isZhaLight) {
       this.initHaSmartPlug(node, haElectricalEndpoint, genLevelCtrlEndpoint);
     } else if (seMeteringEndpoint &&
                !lightLinkEndpoint &&
-               !node.lightingColorCtrlEndpoint) {
+               !node.lightingColorCtrlEndpoint &&
+               !isZhaLight) {
       this.initSeSmartPlug(node, seMeteringEndpoint, genLevelCtrlEndpoint);
     } else if (genLevelCtrlEndpoint) {
       this.initMultiLevelSwitch(node, genLevelCtrlEndpoint, lightLinkEndpoint);

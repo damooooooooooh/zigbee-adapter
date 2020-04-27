@@ -1,7 +1,7 @@
 {
   "name": "zigbee-adapter",
   "display_name": "Zigbee",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "description": "Zigbee adapter plugin for Mozilla WebThings Gateway",
   "author": "Mozilla IoT",
   "main": "index.js",
@@ -16,25 +16,26 @@
   ],
   "homepage": "https://github.com/mozilla-iot/zigbee-adapter",
   "dependencies": {
-    "bl": "^4.0.0",
+    "bl": "^4.0.2",
     "buffer-reader": "^0.1.0",
     "clone-deep": "^4.0.1",
     "color": "^3.1.2",
     "command-line-args": "^5.1.1",
-    "deconz-api": "git+https://github.com/mozilla-iot/deconz-api.git",
+    "deconz-api": "github:mozilla-iot/deconz-api",
     "dissolve": "github:mozilla-iot/dissolve#moziot-changes",
     "dissolve-chunks": "github:mozilla-iot/dissolve-chunks#moziot-changes",
-    "mkdirp": "^0.5.1",
-    "serial-prober": "git+https://github.com/mozilla-iot/serial-prober-node.git",
+    "mkdirp": "^0.5.5",
+    "serial-prober": "github:mozilla-iot/serial-prober-node",
+    "unpi": "^1.1.1",
     "xbee-api": "^0.6.0",
-    "zcl-id": "github:dhylands/zcl-id#moziot-changes",
-    "zcl-packet": "github:dhylands/zcl-packet#moziot-changes",
-    "zigbee-zdo": "git+https://github.com/mozilla-iot/zigbee-zdo.git"
+    "zcl-id": "github:mozilla-iot/zcl-id#moziot-changes",
+    "zcl-packet": "github:mozilla-iot/zcl-packet#moziot-changes",
+    "zigbee-zdo": "github:mozilla-iot/zigbee-zdo"
   },
   "devDependencies": {
-    "babel-eslint": "^10.0.3",
-    "eslint": "^6.4.0",
-    "gateway-addon": "git+https://github.com/mozilla-iot/gateway-addon-node.git"
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.8.0",
+    "gateway-addon": "github:mozilla-iot/gateway-addon-node"
   },
   "license": "MPL-2.0",
   "repository": {
@@ -46,6 +47,7 @@
   },
   "files": [
     "LICENSE",
+    "README.md",
     "SHA256SUMS",
     "index.js",
     "deconz-driver.js",
@@ -62,6 +64,7 @@
     "zb-node.js",
     "zb-property.js",
     "zb-xiaomi.js",
+    "zstack-driver.js",
     "node_modules"
   ],
   "moziot": {
